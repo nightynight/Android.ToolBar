@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Android.toolbar by nightynight</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Android.toolbar</h1>
+      <h2 class="project-tagline">ToorBar+DrawerNavigation实现导航效果</h2>
+      <a href="https://github.com/nightynight/Android.ToolBar" class="btn">View on GitHub</a>
+      <a href="https://github.com/nightynight/Android.ToolBar/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/nightynight/Android.ToolBar/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <p>先引入设计规范，在app的gradle的dependencies中加入：</p>
+
+<pre><code>compile 'com.android.support:design:23.4.0'
+</code></pre>
+
+<p>版本要和appcompat版本一样。
+要使用ToolBar，就要把原来的ActionBar隐藏，在styles.xml中修改代码如下;</p>
+
+<pre><code>&lt;style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar"&gt;
+    &lt;!-- Customize your theme here. --&gt;
+    &lt;item name="windowActionBar"&gt;false&lt;/item&gt;
+    &lt;item name="windowNoTitle"&gt;true&lt;/item&gt;
+    &lt;item name="colorPrimary"&gt;@color/colorPrimary&lt;/item&gt;
+    &lt;item name="colorPrimaryDark"&gt;@color/colorPrimaryDark&lt;/item&gt;
+    &lt;item name="colorAccent"&gt;@color/colorAccent&lt;/item&gt;
+&lt;/style&gt;
+</code></pre>
+
+<p>现在我们可以使用ToolBar了。</p>
+
+<p>先来看一下布局文件：</p>
+
+<pre><code>&lt;android.support.v4.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/drawer_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"&gt;
+    &lt;android.support.design.widget.CoordinatorLayout
+        android:id="@+id/rootLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"&gt;
+        &lt;android.support.design.widget.AppBarLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"&gt;
+            &lt;android.support.v7.widget.Toolbar
+                android:id="@+id/toolbar_main"
+                android:layout_width="fill_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="?attr/colorPrimary"
+                android:minHeight="?attr/actionBarSize"
+                android:title="主界面"
+                app:layout_scrollFlags="scroll|enterAlways"
+                app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"&gt;
+            &lt;/android.support.v7.widget.Toolbar&gt;
+        &lt;/android.support.design.widget.AppBarLayout&gt;
+        &lt;FrameLayout
+            android:id="@+id/content_frame"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior"&gt;
+            &lt;TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Hello World"/&gt;
+        &lt;/FrameLayout&gt;
+    &lt;/android.support.design.widget.CoordinatorLayout&gt;
+    &lt;android.support.design.widget.NavigationView
+        android:id="@+id/navigation_drawer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:fitsSystemWindows="true"
+        app:itemTextColor="#6F6F6F"
+        app:menu="@menu/menu_navi_drawer"&gt;
+    &lt;/android.support.design.widget.NavigationView&gt;
+&lt;/android.support.v4.widget.DrawerLayout&gt;
+在NavigationView中用到了menu文件menu_navi_drawer.xml，用来显示DrawerNavigation中的导航条目,该文件代码如下：
+&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;menu xmlns:android="http://schemas.android.com/apk/res/android"&gt;
+    &lt;group&gt;
+        &lt;item android:id="@+id/navi_drawer_new_task"
+            android:title="菜单1"&gt;
+        &lt;/item&gt;
+        &lt;item android:id="@+id/navi_drawer_settings"
+            android:title="菜单2"&gt;
+        &lt;/item&gt;
+    &lt;/group&gt;
+&lt;/menu&gt;
+</code></pre>
+
+<p>再来看看MainActivity：</p>
+
+<pre><code>public class MainActivity extends AppCompatActivity {
+    public Toolbar toolbar;
+    ActionBarDrawerToggle mDrawerToggle;
+    DrawerLayout drawerLayout;
+    NavigationView navigationView;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        buildToolbar(R.id.toolbar_main);
+        buildDrawer(R.id.drawer_layout, R.id.navigation_drawer, R.layout.user_info);
+    }
+    public void buildToolbar(int id) {
+        toolbar = (Toolbar) findViewById(id);
+        setSupportActionBar(toolbar);
+    }
+    public void buildDrawer(int drawerLayoutId, int naviDrawerId, int naviDrawerHeaderRes) {
+        drawerLayout = (DrawerLayout) findViewById(drawerLayoutId);
+        navigationView = (NavigationView) findViewById(naviDrawerId);
+        if (toolbar != null) {
+            //Construct a new ActionBarDrawerToggle with a Toolbar.
+            mDrawerToggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar,
+                    R.string.app_name, R.string.app_name);
+            mDrawerToggle.syncState();//给drawerNavigation加上触发按钮
+            navigationView.inflateHeaderView(naviDrawerHeaderRes);//给drawerNavigation加上头部
+            navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
+                @Override
+                public boolean onNavigationItemSelected(MenuItem menuItem) {
+                    drawerLayout.closeDrawers();
+                    onNavidrawerItemSelected(menuItem);
+                    return true;
+                }
+            });
+        }
+    }
+    //对菜单的点击做出回应，这里只给菜单1添加一个打开另一个Activity的动作
+    public boolean onNavidrawerItemSelected(MenuItem menuItem) {
+        int id = menuItem.getItemId();
+        switch (id) {
+            case R.id.navi_drawer_new_task:
+                Intent intent = new Intent(this, TestActivity.class);
+                startActivity(intent);
+                break;
+        }
+        return true;
+    }
+}
+</code></pre>
+
+<p>这里用到的头部信息布局文件就不展示了，可以自己添加控件。
+菜单1打开的TestActivity的布局文件如下：</p>
+
+<pre><code>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"&gt;
+    &lt;android.support.design.widget.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"&gt;
+        &lt;android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar_main"
+            android:layout_width="fill_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            android:minHeight="?attr/actionBarSize"
+            app:layout_scrollFlags="scroll|enterAlways"
+            app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"&gt;
+            &lt;TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:text="返回" /&gt;
+            &lt;TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="标题" /&gt;
+        &lt;/android.support.v7.widget.Toolbar&gt;
+    &lt;/android.support.design.widget.AppBarLayout&gt;
+    &lt;FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"&gt;
+        &lt;TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="测试" /&gt;
+    &lt;/FrameLayout&gt;
+&lt;/LinearLayout&gt;
+</code></pre>
+
+<p>在ToolBar中添加的标题，可以实现标题居中。
+TestActivity代码如下：</p>
+
+<pre><code>public class TestActivity extends AppCompatActivity {
+    public Toolbar toolbar;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_test);
+        buildToolbar(R.id.toolbar_main);
+        getSupportActionBar().setTitle("");
+    }
+    public void buildToolbar(int id) {
+        toolbar = (Toolbar) findViewById(id);
+        setSupportActionBar(toolbar);
+        this.toolbar.setNavigationIcon(R.drawable.abc_ic_ab_back_mtrl_am_alpha);
+        this.toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
+    }
+}
+</code></pre>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/nightynight/Android.ToolBar">Android.toolbar</a> is maintained by <a href="https://github.com/nightynight">nightynight</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
